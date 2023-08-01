@@ -126,13 +126,13 @@ RUN rosdep install --from-paths src --ignore-src -y --skip-keys "fastcdr rti-con
 
 RUN colcon build --symlink-install
 
-WORKDIR /opt/ros/humble/src
+WORKDIR /opt/ros/iron/src
 RUN git clone https://github.com/ros-perception/vision_msgs.git
 
-WORKDIR /opt/ros/humble
+WORKDIR /opt/ros/iron
 RUN colcon build --packages-select vision_msgs --symlink-install
 
-RUN apt install vim
+RUN apt install -y vim 
 
 WORKDIR /
 
