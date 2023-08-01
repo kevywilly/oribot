@@ -1,22 +1,22 @@
 import rclpy
 from rclpy.node import Node
 from Adafruit_MotorHAT import Adafruit_MotorHAT
-from oribot.drivetrain import Drivetrain
+from oribot.scripts.drivetrain import Drivetrain
 from geometry_msgs.msg import Twist
 
 class DriverNode(Node):
 
     def __init__(self):
         super().__init__("driver_node")
-        self.drivetrain = Drivetrain()
-        self.create_subscription(Twist, "/turtle1/cmd_vel", self.handle_cmd_vel, 10)
+        self.drivetrain = Drivetrain(self.get_logger(), 4, 4)
+        self.create_subscription(Twist, "/oribot/cmd_vel", self.handle_cmd_vel, 10)
 
     def log(self, txt: str):
         self.get_logger().info(txt)
 
     def handle_cmd_vel(self, msg: Twist):
         self.log(f"linear: {msg.linear.x},  angular: {msg.angular.z}")
-        # self.drivetrain.drive(msg.linear.x, msg.angular.z)
+        self.drivetrain.drive(msg.linear.x, msg.angular.z)
 
     def shutdown(self):
         self.drivetrain.stop()

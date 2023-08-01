@@ -1,0 +1,13 @@
+<launch>
+    <!---
+	<node pkg="ros_deep_learning" exec="video_source" output="screen">
+		<param name="resource" value="csi://0"/>
+        <param name="flip" value="rotate-180"/>
+	</node>
+    -->
+    <node pkg="oribot" exec="driver_node" output="screen">
+        <remap to="/turtle1/cmd_vel" from="/oribot/cmd_vel"/>
+    </node>
+
+    
+</launch>
