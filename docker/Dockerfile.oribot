@@ -20,6 +20,7 @@ WORKDIR /
 COPY ./nginx.conf /etc/nginx/sites-available/default
 COPY ./scripts/oribot_entrypoint.sh oribot_entrypoint.sh
 COPY ./scripts/train_entrypoint.sh train_entrypoint.sh
+RUN echo 'export LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so'
 RUN echo 'source /oribot/install/setup.bash' >> /root/.bashrc
 
 ARG CACHEBUST=1

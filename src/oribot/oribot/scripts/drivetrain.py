@@ -5,7 +5,6 @@ import math
 from Adafruit_MotorHAT import Adafruit_MotorHAT
 from oribot.scripts.settings import settings
 
-
 # https://kyrofa.com/posts/your-first-robot-the-driver-4-5/
 
 # rosrun teleop_twist_joy teleop_node _scale_angular:=4
@@ -32,8 +31,7 @@ def _clip(value, minimum, maximum):
        return minimum
    elif value > maximum:
        return maximum
-   return value
-   
+   return value   
 
 class Drivetrain:
     def __init__(self, logger, linear_max_input, angular_max_input):

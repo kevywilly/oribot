@@ -8,13 +8,14 @@ import cv2
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist
+from oribot_interfaces.srv import Toggle
 from oribot.scripts.image_collector import ImageCollector
-from oribot.scripts.image_utils import (sensor_image_to_jpeg_bytes)
-
+import oribot.scripts.cmd_utils as cmd_utils
+import oribot.scripts.image_utils as image_utils
 
 class Api(Node):
     def __init__(self):
-        super().__init__('api')
+        super().__init__('api_node')
         self.image: Image = None
         self.jpeg_bytes: bytes = None
         self.collector = ImageCollector()
@@ -27,11 +28,11 @@ class Api(Node):
         self.create_subscription(Image, "/video_source/raw", self.image_callback, 10)
 
         # client
-        #self.autodrive_client = self.create_client(Toggle, "toggle_autodrive")
-        #while not self.autodrive_client.wait_for_service(timeout_sec=1.0):
-        #    self.get_logger().info('autodrive service not available, waiting again...')
+        self.autodrive_client = self.create_client(Toggle, "toggle_autodrive")
+        while not self.autodrive_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('autodrive service not available, waiting again...')
        
-    '''
+    
     def toggle_autodrive(self):
         req = Toggle.Request()
         status = not self.autodrive_on
@@ -46,7 +47,7 @@ class Api(Node):
             self.autodrive_on = status
         
         return self.autodrive_on
-    '''
+    
 
     def collect_image(self, category):
         try:
@@ -57,39 +58,13 @@ class Api(Node):
         except Exception as ex:
             self.get_logger().error(str(ex))
 
-
     def drive(self, direction: str, speed: float):
-        msg = Twist()
-        dir = direction.upper()
-        if dir == "FORWARD":
-            msg.linear.x = speed
-        if dir == "FORWARD_LEFT":
-            msg.linear.x = speed/2
-            msg.angular.z = -speed/2
-        if dir == "FORWARD_RIGHT":
-            msg.linear.x = speed/2
-            msg.angular.z = speed/2
-        if dir == "BACKWARD_LEFT":
-            msg.linear.x = -speed/2
-            msg.angular.z = speed/2
-        elif dir == "BACKWARD_LEFT":
-            msg.linear.x = -speed/2
-            msg.angular.z = -speed/2
-        elif dir == "BACKWARD":
-            msg.linear.x = -speed
-        elif dir == "LEFT" or dir == "SLIDE_LEFT":
-            msg.angular.z = -speed
-        elif dir == "RIGHT" or dir == "SLIDE_RIGHT":
-            msg.angular.z = speed
-        else:
-            msg.angular.z = 0.0
-            msg.angular.x = 0.0
-
+        msg = cmd_utils.generate_twist_message(direction, speed)
         self.drivetrain_publisher.publish(msg)
 
     def image_callback(self, msg: Image):
         self.image = msg
-        self.jpeg_image_bytes = sensor_image_to_jpeg_bytes(msg)
+        self.jpeg_image_bytes = image_utils.sensor_image_to_jpeg_bytes(msg)
 
     def get_image(self):
         return self.image

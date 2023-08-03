@@ -1,1 +1,0 @@
-./scripts/run.sh -v /home/orin/oribot:/oribot -c kevywilly/oribot:latest -r /train_entrypoint.sh

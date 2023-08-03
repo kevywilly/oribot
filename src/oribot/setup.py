@@ -23,9 +23,10 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            "api_node = oribot.app:main",
+            "autodrive_node = oribot.autodrive_node:main",
             "driver_node = oribot.driver_node:main",
-            "api = oribot.app:main",
-            "trainer = oribot.trainer_node:main"
+            "trainer_node = oribot.trainer_node:main"
         ],
     },
 )

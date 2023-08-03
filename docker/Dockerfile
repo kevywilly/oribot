@@ -92,7 +92,7 @@ RUN rm ${ROS_ROOT}/*.rosinstall
 
 #WORKDIR /
 
-COPY ./scripts/ros_entrypoint.sh ros_entrypoint.sh
+# COPY ./scripts/ros_entrypoint.sh ros_entrypoint.sh
 # RUN echo 'source /ros_entrypoint.sh' >> /root/.bashrc
 # sudo docker run -it --rm --net=host --runtime nvidia -e DISPLAY=$DISPLAY -v /tmp/.X11-unix/:/tmp/.X11-unix nvcr.io/nvidia/l4t-pytorch:r35.2.1-pth2.0-py3
 
