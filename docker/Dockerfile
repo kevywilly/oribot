@@ -1,145 +1,101 @@
-FROM nvcr.io/nvidia/l4t-pytorch:r35.2.1-pth2.0-py3
+FROM dustynv/ros:humble-pytorch-l4t-r35.3.1
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV SHELL /bin/bash
+ENV SHELL=/bin/bash
 
 ENV ROS_PYTHON_VERSION=3.8
 
-ENV ROS_ROOT=/opt/ros/iron
+ENV ROS_ROOT=/opt/ros/humble
+ENV ROS_DISTRO=humble
+ENV ROS_PKG=desktop
 
-WORKDIR /
+WORKDIR ${ROS_ROOT}
 
-RUN apt-get update
-RUN apt-get purge -y '*opencv*' || echo "existing OpenCV installation not found"
-RUN apt-get install -y --no-install-recommends \
-          cmake \
-		  nano \
-		  mesa-utils \
-		  lsb-release \
-		  gstreamer1.0-tools \
-		  gstreamer1.0-libav \
-		  gstreamer1.0-rtsp \
-		  gstreamer1.0-plugins-good \
-		  gstreamer1.0-plugins-bad \
-		  gstreamer1.0-plugins-ugly \
-		  libgstreamer-plugins-base1.0-dev \
-		  libgstreamer-plugins-good1.0-dev \
-		  libgstreamer-plugins-bad1.0-dev
+RUN mkdir src
 
-RUN apt-get install -y --no-install-recommends \
-		  gstreamer1.0-plugins-rtp
+# download ROS sources
+# https://answers.ros.org/question/325245/minimal-ros2-installation/?answer=325249#post-id-325249
+RUN rosinstall_generator --deps --rosdistro ${ROS_DISTRO} ${ROS_PKG} \
+	launch_xml \
+	launch_yaml \
+	launch_testing \
+	launch_testing_ament_cmake \
+	demo_nodes_cpp \
+	demo_nodes_py \
+	example_interfaces \
+	camera_calibration_parsers \
+	camera_info_manager \
+	cv_bridge \
+	v4l2_camera \
+	vision_opencv \
+	vision_msgs \
+	image_geometry \
+	image_pipeline \
+	image_transport \
+	compressed_image_transport \
+	compressed_depth_image_transport \
+> ros2.${ROS_DISTRO}.${ROS_PKG}.rosinstall
 
-RUN rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+RUN cat ros2.${ROS_DISTRO}.${ROS_PKG}.rosinstall
+RUN vcs import src < ros2.${ROS_DISTRO}.${ROS_PKG}.rosinstall
+    
+# https://github.com/dusty-nv/jetson-containers/issues/181
+RUN rm -r ${ROS_ROOT}/src/ament_cmake
+RUN git -C ${ROS_ROOT}/src/ clone https://github.com/ament/ament_cmake -b ${ROS_DISTRO}
 
-RUN mkdir -p /usr/local/include/gstreamer-1.0/gst && \
-    cp -r /usr/include/gstreamer-1.0/gst/webrtc /usr/local/include/gstreamer-1.0/gst && \
-    ls -ll /usr/local/include/ && \
-    ls -ll /usr/local/include/gstreamer-1.0/gst/webrtc
+# skip installation of some conflicting packages
+ARG SKIP_KEYS="rti-connext-dds-6.0.1 ignition-cmake2 ignition-math6 libopencv-dev libopencv-contrib-dev libopencv-imgproc-dev python-opencv python3-opencv"
 
-RUN apt-get update 
-RUN apt-get install -y --no-install-recommends git cmake libpython3-dev python3-numpy
-RUN git clone --recursive --depth=1 https://github.com/dusty-nv/jetson-inference
-RUN mkdir -p jetson-inference/build  && \
-    cd jetson-inference/build && \
-    cmake -DENABLE_NVMM=off ../ && \
-    make -j$(nproc) && \
-    make install && \
-    ldconfig
+# patches for building Humble on 18.04
 
-RUN locale  
-RUN apt update && sudo apt install locales
-RUN locale-gen en_US en_US.UTF-8
-RUN update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
-RUN export LANG=en_US.UTF-8
+	# the default gcc-7 is too old to build humble
+#RUN apt-get install -y --no-install-recommends gcc-8 g++-8
+#RUN export CC="/usr/bin/gcc-8"
+#RUN export CXX="/usr/bin/g++-8"
+#RUN echo "CC=$CC CXX=$CXX"
 
-RUN apt install -y --no-install-recommends software-properties-common
-RUN add-apt-repository universe
+RUN apt update
 
-RUN apt update && sudo apt install curl -y
-RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
-RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
+# upgrade pybind11
+RUN apt-get purge -y pybind11-dev
+RUN pip3 install --upgrade --no-cache-dir pybind11-global
+   
+# https://github.com/dusty-nv/jetson-containers/issues/160#issuecomment-1429572145
+RUN git -C /tmp clone -b yaml-cpp-0.6.0 https://github.com/jbeder/yaml-cpp.git
+RUN cmake -S /tmp/yaml-cpp -B /tmp/yaml-cpp/BUILD -DBUILD_SHARED_LIBS=ON
+RUN cmake --build /tmp/yaml-cpp/BUILD --parallel $(nproc --ignore=1)
+RUN cmake --install /tmp/yaml-cpp/BUILD
+RUN rm -rf /tmp/yaml-cpp
 
-RUN apt update && sudo apt install -y \
-  python3-pip 
-
-RUN apt-get install -y --no-install-recommends \
-		build-essential \
-		cmake \
-		git \
-		libbullet-dev \
-		libpython3-dev \
-		python3-colcon-common-extensions \
-		python3-flake8 \
-		python3-pip \
-		python3-numpy \
-		python3-pytest-cov \
-		python3-rosdep \
-		python3-setuptools \
-		python3-vcstool \
-		python3-rosinstall-generator \
-		libasio-dev \
-		libtinyxml2-dev \
-		libcunit1-dev
-
-# install some pip packages needed for testing
-RUN pip3 install --upgrade --no-cache-dir \
-		argcomplete \
-		flake8-blind-except \
-		flake8-builtins \
-		flake8-class-newline \
-		flake8-comprehensions \
-		flake8-deprecated \
-		flake8-docstrings \
-		flake8-import-order \
-		flake8-quotes \
-		pytest-repeat \
-		pytest-rerunfailures \
-		pytest
-  
-RUN python3 -m pip install --upgrade pip
-RUN pip3 install --no-cache-dir scikit-build
-RUN pip3 install --upgrade --no-cache-dir --verbose cmake
-RUN cmake --version
-RUN which cmake
-
-RUN apt purge -y python3.9 libpython3.9* || echo "python3.9 not found, skipping removal"
-RUN ls -ll /usr/bin/python*
-
-RUN apt update && sudo apt install -y ros-dev-tools
-
-RUN mkdir -p /opt/ros/iron/src 
-
-WORKDIR /opt/ros/iron
-
-RUN vcs import --input https://raw.githubusercontent.com/ros2/ros2/iron/ros2.repos src
-
-RUN apt upgrade -y
-
-RUN rosdep init
+    
+RUN echo "--skip-keys ${SKIP_KEYS}"
+    
+# install dependencies using rosdep
+# RUN rosdep init
 RUN rosdep update
+RUN rosdep install -y \
+	--ignore-src \
+	--from-paths src \
+	--rosdistro ${ROS_DISTRO} \
+	--skip-keys "${SKIP_KEYS}"
 
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
-RUN PYTHON3_VERSION=`python3 -c 'import sys; version=sys.version_info[:3]; print("{0}.{1}".format(*version))'`
+# build it all - for verbose, see https://answers.ros.org/question/363112/how-to-see-compiler-invocation-in-colcon-build
+RUN colcon build \
+	--merge-install \
+	--cmake-args -DCMAKE_BUILD_TYPE=Release 
+    
+# remove build files
+RUN rm -rf ${ROS_ROOT}/src
+RUN rm -rf ${ROS_ROOT}/logs
+RUN rm -rf ${ROS_ROOT}/build
+RUN rm ${ROS_ROOT}/*.rosinstall
 
-RUN rosdep install --from-paths src --ignore-src -y --skip-keys "fastcdr rti-connext-dds-6.0.1 urdfdom_headers libopencv-dev libopencv-contrib-dev libopencv-imgproc-dev python-opencv python3-opencv"
-
-RUN colcon build --symlink-install
-
-WORKDIR /opt/ros/iron/src
-RUN git clone https://github.com/ros-perception/vision_msgs.git
-
-WORKDIR /opt/ros/iron
-RUN colcon build --packages-select vision_msgs --symlink-install
-
-RUN apt install -y vim 
-
-WORKDIR /
+#WORKDIR /
 
 COPY ./scripts/ros_entrypoint.sh ros_entrypoint.sh
-RUN echo 'source /ros_entrypoint.sh' >> /root/.bashrc
+# RUN echo 'source /ros_entrypoint.sh' >> /root/.bashrc
 # sudo docker run -it --rm --net=host --runtime nvidia -e DISPLAY=$DISPLAY -v /tmp/.X11-unix/:/tmp/.X11-unix nvcr.io/nvidia/l4t-pytorch:r35.2.1-pth2.0-py3
 
 # install ros_deep_learning package (PyTorch-based container only)
-COPY ./scripts/ros_deep_learning.sh ros_deep_learning.sh
-RUN ./ros_deep_learning.sh
+#COPY ./scripts/ros_deep_learning.sh ros_deep_learning.sh
+#RUN ./ros_deep_learning.sh

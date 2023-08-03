@@ -1,8 +1,8 @@
 #!/bin/bash
 #set -e
 
-ROS_DISTRO="iron"
-ROS_ROOT="/opt/ros/iron"
+ROS_DISTRO="humble"
+ROS_ROOT="/opt/ros/humble"
 
 function ros_source_env() 
 {

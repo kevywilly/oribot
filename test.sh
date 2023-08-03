@@ -13,6 +13,3 @@ LATEST="$BASE_TAG:latest"
 
 echo $TAG
 echo $LATEST
-
-sudo docker build --network=host -t $TAG -f Dockerfile .
-sudo docker tag $TAG $LATEST

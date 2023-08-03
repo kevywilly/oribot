@@ -3,31 +3,27 @@ import atexit
 import time 
 import math
 from Adafruit_MotorHAT import Adafruit_MotorHAT
+from oribot.scripts.settings import settings
 
 
 # https://kyrofa.com/posts/your-first-robot-the-driver-4-5/
 
 # rosrun teleop_twist_joy teleop_node _scale_angular:=4
 
-I2C = 7
-_rads = 0.0174533
-_max_duty = 255
-_wheel_radius_meters = 65.0/2.0/1000  # radius in meters
-_wheel_circumference = _wheel_radius_meters * 2 * math.pi
-_max_rpm = 200
-_max_speed = _max_rpm*_wheel_circumference/60
-_max_angular_velocity = 10
+
+RADIANS = 0.0174533
+#_max_duty = 255
+#_wheel_radius_meters = 65.0/2.0/1000  # radius in meters
+#_wheel_circumference = _wheel_radius_meters * 2 * math.pi
+#_max_rpm = 200
+#_max_speed = _max_rpm*_wheel_circumference/60
+#_max_angular_velocity = 10
 
 
-_wheel_base = 175.0/1000.0
-_turning_circumference = _wheel_base * math.pi
-_max_degrees_per_second = 360*_max_speed / _turning_circumference
-_max_radians_per_second = _rads * _max_degrees_per_second
-
-
-
-
-
+#_wheel_base = 175.0/1000.0
+#_turning_circumference = _wheel_base * math.pi
+#_max_degrees_per_second = 360*_max_speed / _turning_circumference
+#_max_radians_per_second = RADIANS * _max_degrees_per_second
 
 def _clip(value, minimum, maximum):
    """Ensure value is between minimum and maximum."""
@@ -41,11 +37,15 @@ def _clip(value, minimum, maximum):
 
 class Drivetrain:
     def __init__(self, logger, linear_max_input, angular_max_input):
-        driver = Adafruit_MotorHAT(addr=0x60, i2c_bus=I2C)
+        driver = Adafruit_MotorHAT(addr=0x60, i2c_bus=settings.i2c_port)
 
         self.logger = logger
-        self._linear_factor = _max_speed/linear_max_input
-        self._angular_factor = _max_radians_per_second/angular_max_input
+        self._wheel_base = settings.wheel_base_meters
+        self._max_linear_velocity = settings.motor_max_rpm*(settings.wheel_radius_meters*2*math.pi)/60 # meters per second
+        self._max_angular_velocity = RADIANS * (360 * self._max_linear_velocity)/(settings.wheel_base_meters*math.pi)
+
+        self._linear_factor = self._max_linear_velocity/linear_max_input
+        self._angular_factor = self._max_angular_velocity/angular_max_input
 
         self.m1 = driver.getMotor(1)
         self.m2 = driver.getMotor(2)
@@ -61,18 +61,16 @@ class Drivetrain:
         atexit.register(self.stop)
 
     def info(self):
-        self.logger.info(f"Max Degrees Per Second: {_max_degrees_per_second}")
-        self.logger.info(f"Max Radians Per Second: {_max_radians_per_second}")
-        self.logger.info(f"Max Linear Velocity (meters / sec): {_max_speed}")
-        self.logger.info(f"Max Angular Velocity (radians / sec): {_max_radians_per_second}")
+        self.logger.info(f"Max Angular Velocity: {self._max_angular_velocity}")
+        self.logger.info(f"Max Linear Velocity (meters / sec): {self._max_linear_velocity}")
         self.logger.info(f"_scale_linear:={self._linear_factor} _scale_angular:={self._angular_factor}")
 
     def drive(self, linear: float = 0.5, angular: float = 0):
 
-        lv = linear*self._linear_factor-angular*self._angular_factor*_wheel_base/2
-        rv = linear*self._linear_factor+angular*self._angular_factor*_wheel_base/2
-        left_speed_pct = int(_max_duty*lv/_max_speed)
-        right_speed_pct = int(_max_duty*rv/_max_speed)
+        lv = linear*self._linear_factor-angular*self._angular_factor*self._wheel_base/2
+        rv = linear*self._linear_factor+angular*self._angular_factor*self._wheel_base/2
+        left_speed_pct = int(255*lv/self._max_linear_velocity)
+        right_speed_pct = int(255*rv/self._max_linear_velocity)
 
         for i in range(4):
             v = left_speed_pct if i % 2 else right_speed_pct
@@ -88,6 +86,6 @@ class Drivetrain:
         direction = Adafruit_MotorHAT.FORWARD if speed_pct >=0 else Adafruit_MotorHAT.BACKWARD
         speed = _clip(abs(speed_pct), 0, 255)
         self.logger.info(f"{motor_id}: {speed_pct}, {speed}, {direction}")
-        #self.motors[motor_id].setSpeed(speed)
-        #self.motors[motor_id].run(direction)
+        self.motors[motor_id].setSpeed(speed)
+        self.motors[motor_id].run(direction)
             
