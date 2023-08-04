@@ -69,11 +69,11 @@ class ImageCollector:
         return im_bytes_np.tobytes()
 
     def delete_image(self, category, name):
-        for i in range(self.config.num_cameras):
-            try:
-                os.remove(os.path.join(self.category_path(category), name))
-                self._generate_counts()
-            except:
-                pass
+        try:
+            os.remove(os.path.join(self.category_path(category), name))
+            self._generate_counts()
+        except:
+            pass
+            
 
         return True

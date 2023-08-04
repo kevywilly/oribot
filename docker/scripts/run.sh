@@ -56,6 +56,7 @@ die() {
 }
 
 # paths to some project directories
+CONTAINER_NAME=""
 NETWORKS_DIR="data/networks"
 CLASSIFY_DIR="python/training/classification"
 DETECTION_DIR="python/training/detection/ssd"
@@ -141,6 +142,21 @@ while :; do
             shift
             break
             ;;
+        -n|--name)
+            if [ "$2" ]; then
+                CONTAINER_NAME="$CONTAINER_NAME --name $2 "
+                shift
+            else
+                die 'ERROR: "--name" requires a non-empty option argument.'
+            fi
+            ;;
+        --name=?*)
+            CONTAINER_NAME="$CONTAINER_NAME --name ${1#*=} "
+            ;;
+        --)              # End of all options.
+            shift
+            break
+            ;;
         -?*)
             printf 'WARN: Unknown option (ignored): %s\n' "$1" >&2
             ;;
@@ -189,6 +205,7 @@ print_var()
 }
 
 print_var "CONTAINER_IMAGE"
+print_var "CONTAINER_NAME"
 print_var "ROS_DISTRO"
 print_var "DATA_VOLUME"
 print_var "DEV_VOLUME"
@@ -204,7 +221,7 @@ print_var "DISPLAY_DEVICE"
 # /proc or /sys files aren't mountable into docker
 cat /proc/device-tree/model > /tmp/nv_jetson_model
 
-sudo docker run --runtime nvidia -it --rm \
+echo "sudo docker run --runtime nvidia -it --rm \
     --network host \
     -v /tmp/argus_socket:/tmp/argus_socket \
     -v /etc/enctune.conf:/etc/enctune.conf \
@@ -212,6 +229,6 @@ sudo docker run --runtime nvidia -it --rm \
     -v /tmp/nv_jetson_model:/tmp/nv_jetson_model \
     $DISPLAY_DEVICE $V4L2_DEVICES $I2C_DEVICES $USB_DEVICES \
     $DATA_VOLUME $USER_VOLUME $DEV_VOLUME \
-    $CONTAINER_IMAGE $USER_COMMAND
+    $CONTAINER_NAME $CONTAINER_IMAGE $USER_COMMAND"
 
 

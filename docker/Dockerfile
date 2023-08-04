@@ -90,12 +90,9 @@ RUN rm -rf ${ROS_ROOT}/logs
 RUN rm -rf ${ROS_ROOT}/build
 RUN rm ${ROS_ROOT}/*.rosinstall
 
-#WORKDIR /
+WORKDIR /
 
-# COPY ./scripts/ros_entrypoint.sh ros_entrypoint.sh
-# RUN echo 'source /ros_entrypoint.sh' >> /root/.bashrc
-# sudo docker run -it --rm --net=host --runtime nvidia -e DISPLAY=$DISPLAY -v /tmp/.X11-unix/:/tmp/.X11-unix nvcr.io/nvidia/l4t-pytorch:r35.2.1-pth2.0-py3
+# cleanup bashrc
+RUN sed -i '/ros_entrypoint/d' /root/.bashrc
+RUN echo "source /ros_entrypoint.sh" >> /root/.bashrc
 
-# install ros_deep_learning package (PyTorch-based container only)
-#COPY ./scripts/ros_deep_learning.sh ros_deep_learning.sh
-#RUN ./ros_deep_learning.sh
