@@ -24,7 +24,7 @@ class TrainerNode(Node):
         self.config = settings.training_config
         self.epochs = 60
         self.cam_index = 1
-        self.train_pct: float = 0.5
+        self.train_pct: float = 0.6
         self.learning_rate: float = 0.001
         self.momentum: float = 0.9
 

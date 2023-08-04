@@ -221,7 +221,7 @@ print_var "DISPLAY_DEVICE"
 # /proc or /sys files aren't mountable into docker
 cat /proc/device-tree/model > /tmp/nv_jetson_model
 
-echo "sudo docker run --runtime nvidia -it --rm \
+sudo docker run --runtime nvidia -it --rm \
     --network host \
     -v /tmp/argus_socket:/tmp/argus_socket \
     -v /etc/enctune.conf:/etc/enctune.conf \
@@ -229,6 +229,6 @@ echo "sudo docker run --runtime nvidia -it --rm \
     -v /tmp/nv_jetson_model:/tmp/nv_jetson_model \
     $DISPLAY_DEVICE $V4L2_DEVICES $I2C_DEVICES $USB_DEVICES \
     $DATA_VOLUME $USER_VOLUME $DEV_VOLUME \
-    $CONTAINER_NAME $CONTAINER_IMAGE $USER_COMMAND"
+    $CONTAINER_NAME $CONTAINER_IMAGE $USER_COMMAND
 
 
