@@ -4,6 +4,7 @@ import time
 import math
 from Adafruit_MotorHAT import Adafruit_MotorHAT
 from oribot.scripts.settings import settings
+from geometry_msgs.msg import Twist
 
 # https://kyrofa.com/posts/your-first-robot-the-driver-4-5/
 
@@ -63,19 +64,43 @@ class Drivetrain:
         self.logger.info(f"Max Linear Velocity (meters / sec): {self._max_linear_velocity}")
         self.logger.info(f"_scale_linear:={self._linear_factor} _scale_angular:={self._angular_factor}")
 
-    def drive(self, linear: float = 0.5, angular: float = 0):
+    def drive_twist(self, twist: Twist):
 
-        lv = linear*self._linear_factor-angular*self._angular_factor*self._wheel_base/2
-        rv = linear*self._linear_factor+angular*self._angular_factor*self._wheel_base/2
+        
+        x = twist.linear.x
+        y = twist.linear.y
+        z = twist.angular.z
+
+        self.logger.info(f"GOT linear: {x},{y} angular: {z}")
+        
+        if abs(y) > abs(x):
+            linear = y
+            sideways = True
+        else:
+            linear = x
+            sideways = False
+        
+        if sideways:
+            lv = linear*self._linear_factor
+            rv = linear*self._linear_factor
+        else:
+            lv = linear*self._linear_factor-z*self._angular_factor*self._wheel_base/2
+            rv = linear*self._linear_factor+z*self._angular_factor*self._wheel_base/2
+
         left_speed_pct = int(255*lv/self._max_linear_velocity)
         right_speed_pct = int(255*rv/self._max_linear_velocity)
 
         for i in range(4):
-            v = left_speed_pct if i % 2 else right_speed_pct
+            if sideways:
+                s = left_speed_pct if i % 2 else right_speed_pct
+                v = s if i == 0 or i == 3 else -s
+            else:
+                v = left_speed_pct if i % 2 else right_speed_pct
+            self.logger.info("writing to motor")
             self._set_speed(motor_id=i, speed_pct=v)
 
     def stop(self):
-        self.drive(0,0)
+        self.drive_twist(Twist())
         for motor in self.motors:
             motor.run(Adafruit_MotorHAT.RELEASE)
         
@@ -83,7 +108,12 @@ class Drivetrain:
     def _set_speed(self, motor_id: int, speed_pct: int):
         direction = Adafruit_MotorHAT.FORWARD if speed_pct >=0 else Adafruit_MotorHAT.BACKWARD
         speed = _clip(abs(speed_pct), 0, 255)
-        self.logger.info(f"{motor_id}: {speed_pct}, {speed}, {direction}")
-        self.motors[motor_id].setSpeed(speed)
-        self.motors[motor_id].run(direction)
+        self.logger.info(f"motor: {motor_id} - speed_pct: {speed_pct}, speed: {speed}, dir: {direction}")
+        if not settings.debug:
+            self.motors[motor_id].setSpeed(speed)
+            self.motors[motor_id].run(direction)
+        else:
+            self.motors[motor_id].setSpeed(0)
+            self.motors[motor_id].run(direction)
+
             

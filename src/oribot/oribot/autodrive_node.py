@@ -36,9 +36,8 @@ class AutodriveNode(Node):
         
 
         # publishers
-        self.drivetrain_publisher = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.drivetrain_publisher = self.create_publisher(Twist, '/oribot/cmd_vel', 10)
         self.log("Created Drivetrain Publisher")
-
 
         # subscriptions
         self.image_subscription = self.create_subscription(Image, "/video_source/raw", self.autodrive, 10)
@@ -139,13 +138,16 @@ class AutodriveNode(Node):
 
         predictions = self._assign_predictions(y, self.config.categories)
 
+        self.log(f"Prediction: {predictions}")
+
         k,v = predictions[0]
 
         new_state = DriveState.DRIVING if k == "forward" else DriveState.AVOIDING
         
         if new_state != self.drive_state:
             self.drive_state = new_state
-            self.drivetrain_publisher.publish(cmd_utils.generate_twist_message(k, settings.robot_drive_speed))
+            if not settings.debug:
+                self.drivetrain_publisher.publish(cmd_utils.generate_twist_message(k, settings.robot_drive_speed))
     
 
 def main(args=None):

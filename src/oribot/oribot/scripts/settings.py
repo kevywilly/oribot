@@ -72,4 +72,6 @@ class AppSettings(BaseSettings):
     detect_net_model: str = "ssd-mobilenet-v2"
     detect_net_threshold: float = 0.5
 
+    debug: bool = False
+
 settings = AppSettings()

@@ -3,7 +3,7 @@ import signal
 import threading
 import flask
 from flask_cors import CORS
-from flask import Flask, Response, jsonify
+from flask import Flask, Response, jsonify, request
 import cv2
 from rclpy.node import Node
 from sensor_msgs.msg import Image
@@ -32,6 +32,8 @@ class Api(Node):
         while not self.autodrive_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('autodrive service not available, waiting again...')
        
+    def log(self, txt: str):
+        self.get_logger().info(f"{txt}")
     
     def toggle_autodrive(self):
         req = Toggle.Request()
@@ -61,6 +63,9 @@ class Api(Node):
     def drive(self, direction: str, speed: float):
         msg = cmd_utils.generate_twist_message(direction, speed)
         self.drivetrain_publisher.publish(msg)
+    
+    def twist(self, twist: Twist):
+        self.drivetrain_publisher.publish(twist)
 
     def image_callback(self, msg: Image):
         self.image = msg
@@ -135,6 +140,19 @@ def drive_cmd(direction, speed):
     app_node.drive(direction, float(speed))
     return {'drive': direction, 'speed': float(speed)}
 
+@app.post('/api/twist')
+def apply_twist():
+    twist_data = request.get_json()
+    twist = Twist()
+    twist.linear.x = float(twist_data['linear']['x'])
+    twist.linear.y = float(twist_data['linear']['y'])
+    twist.linear.z = float(twist_data['linear']['z'])
+    twist.angular.x = float(twist_data['angular']['x'])
+    twist.angular.y = float(twist_data['angular']['y'])
+    twist.angular.z = float(twist_data['angular']['z'])
+    app_node.twist(twist)
+    return twist_data
+
 @app.route('/api/categories/<category>/collect')
 def collect(category: str):
     try:
@@ -174,9 +192,9 @@ def delete_image(category, name):
 
 @app.route('/api/autodrive')
 def toggle_autodrive():
-    #status = app_node.toggle_autodrive()
+    status = app_node.toggle_autodrive()
     
-    return jsonify({"autodrive": False})
+    return jsonify({"autodrive": status})
 
 
 def main(args=None):

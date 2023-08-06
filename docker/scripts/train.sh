@@ -1,1 +1,1 @@
-${ORIBOT_ROOT}/docker/scripts/run.sh -v /home/orin/oribot:/oribot -c kevywilly/oribot:latest -r /train_entrypoint.sh
+${ORIBOT_ROOT}/docker/scripts/run.sh -v /home/orin/oribot:/oribot -c kevywilly/oribot:latest -r /train_entrypoint.sh -n oribot.service

@@ -20,14 +20,7 @@ class TrainerNode(Node):
     def __init__(self):
 
         super().__init__("trainer_node")
-
-        self.config = settings.training_config
-        self.epochs = 60
-        self.cam_index = 1
-        self.train_pct: float = 0.6
-        self.learning_rate: float = 0.001
-        self.momentum: float = 0.9
-
+        self.config: TrainingConfig  = settings.training_config
         
         try:
             os.makedirs(self.config.best_model_folder)
@@ -37,28 +30,37 @@ class TrainerNode(Node):
             print(ex)
             raise ex
             
-        self.log(f"Trainer loaded: {self.config.name}, epochs: {self.epochs}")
+        self.log(f"Trainer loaded for: {self.config.name}")
         
 
     def train(self):
 
-        self.log("loading datasets...")
+        self.log("Starting trainer...")
 
+        epochs = 60
+
+        datafolder = settings.training_config.training_data_path
+
+        train_pct: float = 0.6
+        learning_rate: float = 0.001
+        momentum: float = 0.9
+
+        self.log("loading model")
         model = models.alexnet(pretrained=True)
 
-        self.log(f"using path {self.config.training_data_path} for training data.")
+        self.log(f"using path {datafolder} for training data.")
 
         dataset = datasets.ImageFolder(
-            self.config.training_data_path,
-            transforms.Compose([
-                transforms.ColorJitter(0.1, 0.1, 0.1, 0.1),
-                transforms.Resize((224, 224)),
-                transforms.ToTensor(),
-                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-            ]))
+        datafolder,
+        transforms.Compose([
+            transforms.ColorJitter(0.1, 0.1, 0.1, 0.1),
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ]))
 
         datapoints = len(dataset)
-        train_size = int(self.train_pct * datapoints)
+        train_size = int(train_pct * datapoints)
         test_size = datapoints - train_size
 
         self.log(f"found {datapoints} datapoints.")
@@ -66,41 +68,39 @@ class TrainerNode(Node):
         train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size,test_size])
 
         train_loader = torch.utils.data.DataLoader(
-            train_dataset,
-            batch_size=8,
-            shuffle=True,
-            num_workers=0
+        train_dataset,
+        batch_size=8,
+        shuffle=True,
+        num_workers=0
         )
 
         test_loader = torch.utils.data.DataLoader(
-            test_dataset,
-            batch_size=8,
-            shuffle=True,
-            num_workers=0
+        test_dataset,
+        batch_size=8,
+        shuffle=True,
+        num_workers=0
         )
 
-        print(f"loading model...{self.config.name}")
+        num_cats = 3
 
-        print(f"Categories: {self.config.num_categories}")
-        
-        model.classifier[6] = torch.nn.Linear(model.classifier[6].in_features, self.config.num_categories)
+        print(f"Categories: {num_cats}")
+
+        model.classifier[6] = torch.nn.Linear(model.classifier[6].in_features, num_cats)
 
         print("training model...")
 
         NUM_EPOCHS = 30
-    
+        BEST_MODEL_PATH = settings.training_config.best_model_file
         best_accuracy = 0.0
-        
-        self.log(f"Best model path: {self.config.best_model_file}")
 
-        if os.path.isfile(self.config.best_model_file):
-                print(f"loading best model from {self.config.best_model_file}")
-                model.load_state_dict(torch.load(self.config.best_model_file))
+        if os.path.isfile(BEST_MODEL_PATH):
+            print(f"loading best model from {BEST_MODEL_PATH}")
+            model.load_state_dict(torch.load(BEST_MODEL_PATH))
 
         device = torch.device('cuda')
         model = model.to(device)
 
-        optimizer = optim.SGD(model.parameters(), lr=self.learning_rate, momentum=self.momentum)
+        optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=momentum)
 
         for epoch in range(NUM_EPOCHS):
 
@@ -124,15 +124,15 @@ class TrainerNode(Node):
                 #err = len(torch.nonzero(outputs.argmax(1) - labels).flatten())
                 test_error_count += len(torch.nonzero(outputs.argmax(1) - labels).flatten())
 
-            self.log(f"error_count: {test_error_count}, dataset_len: {len(test_dataset)}")
+                self.log(f"error_count: {test_error_count}, dataset_len: {len(test_dataset)}")
 
             test_accuracy = 1.0 - float(test_error_count) / float(len(test_dataset))
 
-            self.log('EPOCH %d: ACCURACY %f' % (epoch, test_accuracy))
+            self.log('EPOCH %d: ACCURACY %f' % (epoch+1, test_accuracy))
 
             if test_accuracy > best_accuracy:
                 self.log(f"saving best model... with accuracy: {test_accuracy}")
-                torch.save(model.state_dict(), self.config.best_model_file)
+                torch.save(model.state_dict(), BEST_MODEL_PATH)
                 best_accuracy = test_accuracy
 
             

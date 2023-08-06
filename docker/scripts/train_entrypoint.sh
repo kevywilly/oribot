@@ -1,4 +1,3 @@
-#!/bin/bash
-/etc/init.d/nginx start
+#!/bin/
 source /oribot/install/setup.sh
-AMENT_PREFIX_PATH="$AMENT_PREFIX_PATH:/ros_deep_learning/install/ros_deep_learning" ros2 run oribot trainer_node
+ros2 run oribot trainer_node
