@@ -16,7 +16,8 @@ ExecStart=/usr/bin/docker run --runtime nvidia --rm  \
     -v /etc/nv_tegra_release:/etc/nv_tegra_release     \
     -v /tmp/nv_jetson_model:/tmp/nv_jetson_model      \
     --device /dev/video0   \
-    --device /dev/i2c-0  --device /dev/i2c-1  --device /dev/i2c-2  --device /dev/i2c-3  --device /dev/i2c-4  --device /dev/i2c-5  --device /dev/i2c-6  --device /dev/i2c-7  --device /dev/i2c-8  --device /dev/i2c-9   --device /dev/ttyUSB0       \
+    --device /dev/video1   \
+    --device /dev/i2c-0  --device /dev/i2c-1  --device /dev/i2c-2  --device /dev/i2c-3  --device /dev/i2c-4  --device /dev/i2c-5  --device /dev/i2c-6  --device /dev/i2c-7  --device /dev/i2c-8  --device /dev/i2c-9     \
     --volume /home/orin/oribot/service/data:/jetson-inference/data \
     --volume /home/orin/oribot/service/python/training/classification/data:/jetson-inference/python/training/classification/data \
     --volume /home/orin/oribot/service/python/training/classification/models:/jetson-inference/python/training/classification/models \
