@@ -16,16 +16,31 @@ RUN mkdir src
 # download ROS sources
 # https://answers.ros.org/question/325245/minimal-ros2-installation/?answer=325249#post-id-325249
 RUN rosinstall_generator --deps --rosdistro ${ROS_DISTRO} ${ROS_PKG} \
+	angles \
+	apriltag \
+	behaviortree_cpp_v3 \
+	camera_calibration_parsers \
+	camera_info_manager \
+	cv_bridge \
+	demo_nodes_cpp \
+	demo_nodes_py \
+	diagnostic_updater \
+	example_interfaces \
+	image_geometry \
+	image_pipeline \
+	image_transport \
+	image_transport_plugins \
 	launch_xml \
 	launch_yaml \
 	launch_testing \
 	launch_testing_ament_cmake \
-	demo_nodes_cpp \
-	demo_nodes_py \
-	example_interfaces \
-	camera_calibration_parsers \
-	camera_info_manager \
-	cv_bridge \
+	nav2_msgs \
+    ompl \
+    resource_retriever \
+    rqt_image_view \
+    rviz2 \
+	sensor_msgs \
+    slam_toolbox \
 	v4l2_camera \
 	vision_opencv \
 	vision_msgs \
@@ -36,6 +51,8 @@ RUN rosinstall_generator --deps --rosdistro ${ROS_DISTRO} ${ROS_PKG} \
 	compressed_depth_image_transport \
 > ros2.${ROS_DISTRO}.${ROS_PKG}.rosinstall
 
+
+
 RUN cat ros2.${ROS_DISTRO}.${ROS_PKG}.rosinstall
 RUN vcs import src < ros2.${ROS_DISTRO}.${ROS_PKG}.rosinstall
     
@@ -44,7 +61,7 @@ RUN rm -r ${ROS_ROOT}/src/ament_cmake
 RUN git -C ${ROS_ROOT}/src/ clone https://github.com/ament/ament_cmake -b ${ROS_DISTRO}
 
 # skip installation of some conflicting packages
-ARG SKIP_KEYS="rti-connext-dds-6.0.1 ignition-cmake2 ignition-math6 libopencv-dev libopencv-contrib-dev libopencv-imgproc-dev python-opencv python3-opencv"
+ARG SKIP_KEYS="fastcdr rti-connext-dds-6.0.1 rti-connext-dds-5.3.1 urdfdom_headers libopencv-dev libopencv-contrib-dev libopencv-imgproc-dev python-opencv python3-opencv" 
 
 # patches for building Humble on 18.04
 
@@ -82,14 +99,15 @@ RUN rosdep install -y \
 # build it all - for verbose, see https://answers.ros.org/question/363112/how-to-see-compiler-invocation-in-colcon-build
 RUN colcon build \
 	--merge-install \
-	--cmake-args -DCMAKE_BUILD_TYPE=Release 
+	--cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo 
     
 # remove build files
 RUN rm -rf ${ROS_ROOT}/src
 RUN rm -rf ${ROS_ROOT}/logs
 RUN rm -rf ${ROS_ROOT}/build
-RUN rm ${ROS_ROOT}/*.rosinstall
-
+# RUN rm ${ROS_ROOT}/*.rosinstall
+RUN rm -Rf /var/lib/apt/lists/* 
+RUN apt-get clean
 WORKDIR /
 
 # cleanup bashrc
