@@ -25,7 +25,7 @@ class Api(Node):
         self.drivetrain_publisher = self.create_publisher(Twist, '/oribot/cmd_vel', 10)
 
         # subscriptions
-        self.create_subscription(Image, "/video_source/raw", self.image_callback, 10)
+        self.create_subscription(Image, "/left/image_raw", self.image_callback, 10)
 
         # client
         self.autodrive_client = self.create_client(Toggle, "toggle_autodrive")

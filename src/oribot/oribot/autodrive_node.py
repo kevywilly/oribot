@@ -5,6 +5,7 @@ from sensor_msgs.msg import Image
 from oribot.scripts.settings import settings, TrainingConfig
 from oribot_interfaces.srv import Toggle
 import oribot.scripts.cmd_utils as cmd_utils
+import cv2
 import oribot.scripts.image_utils as image_utils
 import os
 import numpy as np
@@ -12,6 +13,7 @@ import torch
 import torch.nn.functional as F
 import torchvision
 from enum import Enum
+
 
 torch.hub.set_dir(settings.training_config.model_root)
 
@@ -107,6 +109,18 @@ class AutodriveNode(Node):
         self.log("model ready...")
 
     def _preprocess(self, sensor_image):
+
+        x = image_utils.sensor_image_to_cv2(sensor_image)
+        x = cv2.resize(x, (224,224))
+        x = cv2.cvtColor(x, cv2.COLOR_BGR2RGB)
+        x = x.transpose((2, 0, 1))
+        x = torch.from_numpy(x).float()
+        x = self.normalize(x)
+        x = x.to(self.device)
+        x = x[None, ...]
+        return x
+    
+    '''
         cuda_image = image_utils.sensor_image_to_cuda(sensor_image)
         x = image_utils.resize_cuda(cuda_image, 224, 224)
         x = np.transpose(x, (2, 0, 1))
@@ -114,6 +128,7 @@ class AutodriveNode(Node):
         x = self.normalize(x)
         x = x[None, ...]
         return x
+    '''
 
     def predict(self, sensor_image):
         input = self._preprocess(sensor_image=sensor_image)
