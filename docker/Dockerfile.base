@@ -1,7 +1,9 @@
 FROM dustynv/ros:humble-pytorch-l4t-r35.3.1
 
+# disable terminal interaction for apt
 ENV DEBIAN_FRONTEND=noninteractive
-ENV SHELL=/bin/bash
+ENV SHELL /bin/bash
+SHELL ["/bin/bash", "-c"]
 
 ENV ROS_PYTHON_VERSION=3.8
 
@@ -16,82 +18,145 @@ RUN mkdir src
 # download ROS sources
 # https://answers.ros.org/question/325245/minimal-ros2-installation/?answer=325249#post-id-325249
 RUN rosinstall_generator --deps --rosdistro ${ROS_DISTRO} ${ROS_PKG} \
+	angles \
+	apriltag \
+    behaviortree_cpp_v3 \
+    bondcpp \
+	camera_calibration_parsers \
+	camera_info_manager \
+	compressed_image_transport \
+	compressed_depth_image_transport \
+	cv_bridge \
+	demo_nodes_cpp \
+	demo_nodes_py \
+	diagnostic_updater \
+    example_interfaces \
+	image_geometry \
+	image_pipeline \
+	image_transport \
+	image_transport_plugins \
 	launch_xml \
 	launch_yaml \
 	launch_testing \
 	launch_testing_ament_cmake \
-	demo_nodes_cpp \
-	demo_nodes_py \
-	example_interfaces \
-	camera_calibration_parsers \
-	camera_info_manager \
-	cv_bridge \
+	nav2_msgs \
+	ompl \
+	resource_retriever \
+	rqt_image_view \
+	rviz2 \
+	sensor_msgs \
+	slam_toolbox \
 	v4l2_camera \
-	navigation2 \
-	nav2_bringup \
-	turtlebot3-gazebo \
 	vision_opencv \
 	vision_msgs \
-	image_geometry \
-	image_pipeline \
-	image_transport \
-	compressed_image_transport \
-	compressed_depth_image_transport \
+	turtlebot3-gazebo \
 > ros2.${ROS_DISTRO}.${ROS_PKG}.rosinstall
 
-RUN cat ros2.${ROS_DISTRO}.${ROS_PKG}.rosinstall
-RUN vcs import src < ros2.${ROS_DISTRO}.${ROS_PKG}.rosinstall
-    
-# https://github.com/dusty-nv/jetson-containers/issues/181
-RUN rm -r ${ROS_ROOT}/src/ament_cmake
-RUN git -C ${ROS_ROOT}/src/ clone https://github.com/ament/ament_cmake -b ${ROS_DISTRO}
+RUN echo "========================= BUILDING PRIMARY ROS ==============================="
 
-# skip installation of some conflicting packages
-ARG SKIP_KEYS="rti-connext-dds-6.0.1 ignition-cmake2 ignition-math6 libopencv-dev libopencv-contrib-dev libopencv-imgproc-dev python-opencv python3-opencv"
+# Build ROS 2 from source
+RUN cd ${ROS_ROOT} \
+    && cat ros2.${ROS_DISTRO}.${ROS_PKG}.rosinstall \
+    && vcs import src < ros2.${ROS_DISTRO}.${ROS_PKG}.rosinstall
 
-# patches for building Humble on 18.04
+WORKDIR /
+RUN git clone https://github.com/xtensor-stack/xsimd.git
+RUN mkdir -p xsimd/build && cd xsimd/build && cmake .. && make -j4 && make install && ldconfig
 
-	# the default gcc-7 is too old to build humble
-#RUN apt-get install -y --no-install-recommends gcc-8 g++-8
-#RUN export CC="/usr/bin/gcc-8"
-#RUN export CXX="/usr/bin/g++-8"
-#RUN echo "CC=$CC CXX=$CXX"
+RUN rm -rf /etc/ros/rosdep/sources.list.d/20-default.list
 
-RUN apt update
+RUN cd ${ROS_ROOT} \
+    && apt-get update \
+    && rosdep init \
+    && rosdep update \
+    && rosdep install -y \
+      --ignore-src \
+      --from-paths src \
+      --rosdistro ${ROS_DISTRO} \
+      --skip-keys "fastcdr rti-connext-dds-6.0.1 rti-connext-dds-5.3.1 urdfdom_headers libopencv-dev libopencv-contrib-dev libopencv-imgproc-dev python-opencv python3-opencv navigation2"
 
-# upgrade pybind11
-RUN apt-get purge -y pybind11-dev
-RUN pip3 install --upgrade --no-cache-dir pybind11-global
-   
-# https://github.com/dusty-nv/jetson-containers/issues/160#issuecomment-1429572145
-RUN git -C /tmp clone -b yaml-cpp-0.6.0 https://github.com/jbeder/yaml-cpp.git
-RUN cmake -S /tmp/yaml-cpp -B /tmp/yaml-cpp/BUILD -DBUILD_SHARED_LIBS=ON
-RUN cmake --build /tmp/yaml-cpp/BUILD --parallel $(nproc --ignore=1)
-RUN cmake --install /tmp/yaml-cpp/BUILD
-RUN rm -rf /tmp/yaml-cpp
+RUN cd ${ROS_ROOT} \
+    && colcon build --merge-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+    && rm -Rf src build log
 
-    
-RUN echo "--skip-keys ${SKIP_KEYS}"
-    
-# install dependencies using rosdep
-# RUN rosdep init
-RUN rosdep update
-RUN rosdep install -y \
-	--ignore-src \
-	--from-paths src \
-	--rosdistro ${ROS_DISTRO} \
-	--skip-keys "${SKIP_KEYS}"
+RUN rm -Rf /var/lib/apt/lists/* && apt-get clean
 
-# build it all - for verbose, see https://answers.ros.org/question/363112/how-to-see-compiler-invocation-in-colcon-build
-RUN colcon build \
-	--merge-install \
-	--cmake-args -DCMAKE_BUILD_TYPE=Release 
-    
+# Alias setup.bash for consistency with pre-built binary installations of ROS 2
+RUN echo "source /opt/ros/${ROS_DISTRO}/install/setup.bash ; export ROS_DISTRO=${ROS_DISTRO}" > /opt/ros/${ROS_DISTRO}/setup.bash
+
+# Install negotiated
+RUN apt-get update && mkdir -p ${ROS_ROOT}/src && cd ${ROS_ROOT}/src \
+    && git clone https://github.com/osrf/negotiated && cd negotiated && git checkout master && cd .. \
+    && source ${ROS_ROOT}/setup.bash && cd ${ROS_ROOT} \
+    && rosdep install -y -r --ignore-src --from-paths src --rosdistro ${ROS_DISTRO} \
+    && colcon build --merge-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo --packages-up-to-regex negotiated* \
+    && rm -Rf src build log \
+&& rm -rf /var/lib/apt/lists/* \
+&& apt-get clean
+
+# Install nav2
+RUN apt-get update && mkdir -p ${ROS_ROOT}/src && cd ${ROS_ROOT}/src \
+    && git clone https://github.com/ros-planning/navigation2.git && cd navigation2 && git checkout ec49c2772a0926c86ca83a4933c664744712e2e9 && cd .. \
+    && git clone https://github.com/BehaviorTree/BehaviorTree.CPP.git && cd BehaviorTree.CPP && git checkout a363bdcae88350bc748598a7d2950e300859469c && cd .. \
+    && source ${ROS_ROOT}/setup.bash && cd ${ROS_ROOT} \
+    && rosdep install -y -r --ignore-src --from-paths src --rosdistro ${ROS_DISTRO} \
+    && colcon build --merge-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo --packages-up-to-regex nav2* --packages-ignore nav2_system_tests \
+    && rm -Rf src build log \
+&& rm -rf /var/lib/apt/lists/* \
+&& apt-get clean
+
+# Install vda5050_msgs
+RUN apt-get update && mkdir -p ${ROS_ROOT}/src && cd ${ROS_ROOT}/src \
+    && git clone https://github.com/ipa320/vda5050_msgs.git vda5050_root \
+    && cd vda5050_root && git checkout ros2 && cd .. \
+    && mv vda5050_root/vda5050_msgs/ vda5050_msgs \
+    && rm -rf vda5050_root \
+    && source ${ROS_ROOT}/setup.bash && cd ${ROS_ROOT} \
+    && colcon build --merge-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo --packages-up-to vda5050_msgs \
+    && rm -Rf src build log \
+&& rm -rf /var/lib/apt/lists/* \
+&& apt-get clean
+
+# Install rosbridge_library
+RUN apt-get update && mkdir -p ${ROS_ROOT}/src && cd ${ROS_ROOT}/src \
+    && git clone https://github.com/RobotWebTools/rosbridge_suite.git && cd rosbridge_suite && git checkout ros2 && cd .. \
+    && source ${ROS_ROOT}/setup.bash && cd ${ROS_ROOT} \
+    && rosdep install -y -r --ignore-src --from-paths src --rosdistro ${ROS_DISTRO} \
+    && colcon build --merge-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo --packages-up-to rosbridge_library rosbridge_server \
+    && rm -Rf src build log \
+&& rm -rf /var/lib/apt/lists/* \
+&& apt-get clean
+
+# Install patched image_proc package with backported resize node fix
+# https://github.com/ros-perception/image_pipeline/pull/786
+#RUN apt-get update && mkdir -p ${ROS_ROOT}/src && cd ${ROS_ROOT}/src \
+#    && git clone https://github.com/ros-perception/image_pipeline.git && cd image_pipeline && git checkout humble \
+#    && git config user.email "builder@nvidia.com" && git config user.name "NVIDIA Builder" \
+#    && git remote add fork https://github.com/schornakj/image_pipeline.git && git fetch fork && git cherry-pick fork/pr-backport-693 \
+#   && source ${ROS_ROOT}/setup.bash && cd ${ROS_ROOT} \
+#    && rosdep install -y -r --ignore-src --from-paths src --rosdistro ${ROS_DISTRO} \
+#    && colcon build --merge-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo --packages-up-to image_proc \
+#    && echo "image_pipeline https://github.com/ros-perception/image_pipeline/pull/786" >> ${ROS_ROOT}/VERSION \
+#    && rm -Rf src build log \
+#&& rm -rf /var/lib/apt/lists/* \
+# && apt-get clean
+
+# Install patched rclcpp package with backported multithreadedexecutor fix
+# https://github.com/ros2/rclcpp/commit/232262c02a1265830c7785b7547bd51e1124fcd8
+# RUN apt-get update && mkdir -p ${ROS_ROOT}/src && cd ${ROS_ROOT}/src \
+#    && git clone https://github.com/ros2/rclcpp.git && cd rclcpp && git checkout humble \
+#    && git config user.email "builder@nvidia.com" && git config user.name "NVIDIA Builder" \
+#    && git cherry-pick 232262c02a1265830c7785b7547bd51e1124fcd8 \
+#    && source ${ROS_ROOT}/setup.bash && cd ${ROS_ROOT} \
+#    && rosdep install -y -r --ignore-src --from-paths src --rosdistro ${ROS_DISTRO} \
+#    && colcon build --merge-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo --packages-up-to rclcpp \
+#    && echo "rclcpp https://github.com/ros2/rclcpp/commit/232262c02a1265830c7785b7547bd51e1124fcd8" >> ${ROS_ROOT}/VERSION \
+#    && rm -Rf src build log \
+# && rm -rf /var/lib/apt/lists/* \
+# && apt-get clean
+
 # remove build files
-RUN rm -rf ${ROS_ROOT}/src
-RUN rm -rf ${ROS_ROOT}/logs
-RUN rm -rf ${ROS_ROOT}/build
-# RUN rm ${ROS_ROOT}/*.rosinstall
+RUN cd ${ROS_ROOT} && rm -rf src build logs
 
 WORKDIR /
 

@@ -1,4 +1,4 @@
-FROM kevywilly/orin-ros2-humble:latest
+FROM kevywilly/orin-ros2-humble-nav
 
 WORKDIR /
 

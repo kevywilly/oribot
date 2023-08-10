@@ -15,4 +15,4 @@ echo $TAG
 echo $LATEST
 
 sudo docker build --network=host -t $TAG -f Dockerfile.base .
-sudo docker tag $TAG $LATEST
+docker tag $TAG $LATEST
