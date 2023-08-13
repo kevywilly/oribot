@@ -7,9 +7,7 @@ from oribot.scripts.settings import settings
 from geometry_msgs.msg import Twist
 
 # https://kyrofa.com/posts/your-first-robot-the-driver-4-5/
-
 # rosrun teleop_twist_joy teleop_node _scale_angular:=4
-
 
 RADIANS = 0.0174533
 #_max_duty = 255
@@ -18,7 +16,6 @@ RADIANS = 0.0174533
 #_max_rpm = 200
 #_max_speed = _max_rpm*_wheel_circumference/60
 #_max_angular_velocity = 10
-
 
 #_wheel_base = 175.0/1000.0
 #_turning_circumference = _wheel_base * math.pi
@@ -103,7 +100,6 @@ class Drivetrain:
         self.drive_twist(Twist())
         for motor in self.motors:
             motor.run(Adafruit_MotorHAT.RELEASE)
-        
 
     def _set_speed(self, motor_id: int, speed_pct: int):
         direction = Adafruit_MotorHAT.FORWARD if speed_pct >=0 else Adafruit_MotorHAT.BACKWARD
