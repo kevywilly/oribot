@@ -2,9 +2,10 @@ import launch
 from launch.substitutions import Command, LaunchConfiguration
 import launch_ros
 import os
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch_ros.actions import Node
-
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from ament_index_python import get_package_share_directory
 def generate_launch_description():
     pkg_share = launch_ros.substitutions.FindPackageShare(package='oribot_description').find('oribot_description')
     default_model_path = os.path.join(pkg_share, 'src/description/oribot_description.urdf')
@@ -24,6 +25,12 @@ def generate_launch_description():
     print(default_model_path)
     print(default_rviz_config_path)
 
+    slam = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+        os.path.join(get_package_share_directory("slam_toolbox"),"launch","online_async_launch.py")
+        )
+    )
+    # online_async_launch.py 
     robot_state_publisher_node = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
@@ -85,7 +92,7 @@ def generate_launch_description():
          parameters=[os.path.join(pkg_share, 'config/ekf.yaml')]
     )
 
-    return launch.LaunchDescription([
+    ld = launch.LaunchDescription([
         DeclareLaunchArgument(name='gui', default_value='True',
                                             description='Flag to enable joint_state_publisher_gui'),
         DeclareLaunchArgument(name='model', default_value=default_model_path,
@@ -140,6 +147,7 @@ def generate_launch_description():
         joint_state_publisher_node,
         joint_state_publisher_gui_node,
         robot_state_publisher_node,
+        robot_localization_node,
         driver_node,
         imu_node,
         oribot_node,
@@ -167,7 +175,11 @@ def generate_launch_description():
                             }],
             output='screen',
         ),
+        slam,
         rviz_node
     ])
+
+    #ld.add_action(slam)
+    return ld
 
 # https://www.youtube.com/watch?v=idQb2pB-h2Q

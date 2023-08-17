@@ -7,8 +7,7 @@ Panels:
         - /Global Options1
         - /Status1
         - /RobotModel1
-        - /RobotModel1/Mass Properties1
-        - /LaserScan1
+        - /Odometry1
         - /Odometry1/Topic1
         - /Map1/Topic1
       Splitter Ratio: 0.5
@@ -100,19 +99,56 @@ Visualization Manager:
       Value: true
       Visual Enabled: true
     - Class: rviz_default_plugins/TF
-      Enabled: false
+      Enabled: true
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        base_footprint:
+          Value: true
+        base_link:
+          Value: true
+        drivewhl_fl_link:
+          Value: true
+        drivewhl_fr_link:
+          Value: true
+        drivewhl_rl_link:
+          Value: true
+        drivewhl_rr_link:
+          Value: true
+        imu_link:
+          Value: true
+        laser:
+          Value: true
+        map:
+          Value: true
+        odom:
+          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: false
       Tree:
-        {}
+        map:
+          {}
+        odom:
+          base_link:
+            base_footprint:
+              {}
+            drivewhl_fl_link:
+              {}
+            drivewhl_fr_link:
+              {}
+            drivewhl_rl_link:
+              {}
+            drivewhl_rr_link:
+              {}
+            imu_link:
+              {}
+            laser:
+              {}
       Update Interval: 0
-      Value: false
+      Value: true
     - Alpha: 0.5
       Cell Size: 1
       Class: rviz_default_plugins/Grid
@@ -202,7 +238,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /odometry/filtered
+        Value: /odom
       Value: true
     - Alpha: 0.699999988079071
       Class: rviz_default_plugins/Map
@@ -242,7 +278,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
-    Fixed Frame: laser
+    Fixed Frame: map
     Frame Rate: 30
   Name: root
   Tools:
@@ -285,7 +321,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 2.5322203636169434
+      Distance: 2.498155355453491
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -300,10 +336,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6653977036476135
+      Pitch: 0.530397891998291
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.2572190463542938
+      Yaw: 2.727220058441162
     Saved: ~
 Window Geometry:
   Displays:
