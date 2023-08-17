@@ -1,0 +1,5 @@
+<launch>
+    <node pkg="oribot_driver" exec="driver_node" output="screen">
+        <!-- remap to="/turtle1/cmd_vel" from="/oribot/cmd_vel" -->
+    </node>
+</launch>

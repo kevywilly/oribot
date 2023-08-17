@@ -3,7 +3,7 @@ FROM kevywilly/orin-ros2-humble-nav
 WORKDIR /
 
 #RUN apt remove -y python-blinker python3-blinker
-RUN pip3 install --no-cache-dir --verbose Adafruit_MotorHAT Adafruit_SSD1306 flask traitlets
+RUN pip3 install --no-cache-dir --verbose flask
 RUN pip3 install --no-cache-dir --verbose flask_cors
 RUN pip3 install --no-cache-dir --verbose pydantic pydantic_settings
 # RUN pip3 install --no-cache-dir --verbose setuptools==58.2.0
@@ -20,8 +20,26 @@ WORKDIR /
 COPY ./nginx.conf /etc/nginx/sites-available/default
 COPY ./scripts/oribot_entrypoint.sh oribot_entrypoint.sh
 COPY ./scripts/train_entrypoint.sh train_entrypoint.sh
+RUN echo 'RMW_IMPLEMENTATION=rmw_cyclonedds_cpp' >> /root/.bashrc
 RUN echo 'export LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so' >> /root/.bashrc
 RUN echo 'source /oribot/install/setup.bash' >> /root/.bashrc
+
+RUN pip3 install Jetson.GPIO
+
+RUN groupadd -f -r gpio
+RUN usermod -a -G gpio root
+RUN git clone https://github.com/NVIDIA/jetson-gpio.git
+RUN cp /jetson-gpio/lib/python/Jetson/GPIO/99-gpio.rules /etc/udev/rules.d
+
+
+RUN pip3 install --no-cache-dir --verbose adafruit-blinka
+RUN rm -rf /jetson-gpio
+
+# https://docs.circuitpython.org/projects/bno055/en/latest/
+# https://github.com/adafruit/Adafruit_CircuitPython_MotorKit
+RUN pip3 install --no-cache-dir --verbose adafruit-circuitpython-bno055 adafruit-circuitpython-motorkit
+
+
 
 ARG CACHEBUST=1
 

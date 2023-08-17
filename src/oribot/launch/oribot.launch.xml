@@ -1,5 +1,9 @@
 <launch>
-    <node pkg="oribot" exec="autodrive_node" output="screen"/>
+    <node pkg="oribot_autodrive" exec="autodrive_node" output="screen"/>
+    <node pkg="oribot_imu" exec="imu_node" output="screen"/>
+    <node pkg="oribot_driver" exec="driver_node" output="screen">
+        <!-- remap to="/turtle1/cmd_vel" from="/oribot/cmd_vel" -->
+    </node>
     <node pkg="sllidar_ros2" exec="sllidar_node" name="sllidar_node">
         <param name="channel_type" value="serial"/>
         <param name="serial_port" value="/dev/ttyUSB0"/>
@@ -14,7 +18,4 @@
         <param name="flip" value="rotate-180"/>
 	</node>
     <node pkg="oribot" exec="api_node" output="screen"/>
-    <node pkg="oribot" exec="driver_node" output="screen">
-        <!-- remap to="/turtle1/cmd_vel" from="/oribot/cmd_vel" -->
-    </node>
 </launch>

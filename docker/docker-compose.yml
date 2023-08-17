@@ -3,6 +3,7 @@ services:
   oribot:
     image: kevywilly/oribot:latest
     command: tail -f /dev/null
+    privileged: true
     volumes:
       - /home/orin/oribot:/oribot
       - /etc/enctune.conf:/etc/enctune.conf

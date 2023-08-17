@@ -16,7 +16,9 @@ def generate_launch_description():
     inverted = LaunchConfiguration('inverted', default='false')
     angle_compensate = LaunchConfiguration('angle_compensate', default='true')
     scan_mode = LaunchConfiguration('scan_mode', default='Sensitivity')
-    world_path=os.path.join(pkg_share, 'world/my_world.sdf'),
+    world_path=os.path.join(pkg_share, 'world/my_world.sdf')
+    video_resource = LaunchConfiguration('video_resource', default = 'csi://0')
+    video_flip = LaunchConfiguration('video-flip', default = 'rotate-180')
 
     print(pkg_share)
     print(default_model_path)
@@ -45,6 +47,42 @@ def generate_launch_description():
         name='rviz2',
         output='screen',
         arguments=['-d', LaunchConfiguration('rvizconfig')],
+    )
+
+    oribot_node = Node(
+        package='oribot',
+        executable='api_node',
+        name='inu_node',
+        output='screen'
+    )
+
+    autodrive_node = Node(
+        package='oribot_autodrive',
+        executable='autodrive_node',
+        name='autodrive_node',
+        output='screen'
+    )
+
+    driver_node = Node(
+        package='oribot_driver',
+        executable='driver_node',
+        name='inu_node',
+        output='screen'
+    )
+
+    imu_node = Node(
+        package='oribot_imu',
+        executable='imu_node',
+        name='inu_node',
+        output='screen'
+    )
+
+    robot_localization_node = launch_ros.actions.Node(
+         package='robot_localization',
+         executable='ekf_node',
+         name='ekf_filter_node',
+         output='screen',
+         parameters=[os.path.join(pkg_share, 'config/ekf.yaml')]
     )
 
     return launch.LaunchDescription([
@@ -87,20 +125,49 @@ def generate_launch_description():
             'scan_mode',
             default_value=scan_mode,
             description='Specifying scan mode of lidar'),
+
+        DeclareLaunchArgument(
+            'video_resource',
+            default_value=video_resource,
+            description='Specifying video source'),
         
+        DeclareLaunchArgument(
+            'video_flip',
+            default_value=video_flip,
+            description='Specifying video flip'),
+        
+        autodrive_node,
         joint_state_publisher_node,
         joint_state_publisher_gui_node,
         robot_state_publisher_node,
+        driver_node,
+        imu_node,
+        oribot_node,
+        Node(
+            package="ros_deep_learning",
+            executable="video_source",
+            name="video_source",
+            parameters=[{
+                'resource': video_resource,
+                'flip': video_flip
+            }],
+            output="screen"
+        ),
         Node(
             package='sllidar_ros2',
             executable='sllidar_node',
             name='sllidar_node',
             parameters=[{'channel_type':channel_type,
-                         'serial_port': serial_port, 
-                         'serial_baudrate': serial_baudrate, 
-                         'frame_id': frame_id,
-                         'inverted': inverted, 
-                         'angle_compensate': angle_compensate}],
-            output='screen'),
+                            'serial_port': serial_port, 
+                            'serial_baudrate': serial_baudrate, 
+                            'frame_id': frame_id,
+                            'inverted': inverted, 
+                            'angle_compensate': angle_compensate,
+                            'scan_mode': scan_mode
+                            }],
+            output='screen',
+        ),
         rviz_node
     ])
+
+# https://www.youtube.com/watch?v=idQb2pB-h2Q
