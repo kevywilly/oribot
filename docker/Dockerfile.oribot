@@ -24,13 +24,18 @@ RUN echo 'RMW_IMPLEMENTATION=rmw_cyclonedds_cpp' >> /root/.bashrc
 RUN echo 'export LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so' >> /root/.bashrc
 RUN echo 'source /oribot/install/setup.bash' >> /root/.bashrc
 
+
+# RUN cd / && git clone https://github.com/pjueon/JetsonGPIO.git gpio \
+# && cd gpio \
+# && mkdir build && cd build && cmake -DJETSON_GPIO_POST_INSTALL=OFF .. && make && make install \
+# && rm -rf /gpio
+
 RUN pip3 install Jetson.GPIO
 
 RUN groupadd -f -r gpio
 RUN usermod -a -G gpio root
 RUN git clone https://github.com/NVIDIA/jetson-gpio.git
 RUN cp /jetson-gpio/lib/python/Jetson/GPIO/99-gpio.rules /etc/udev/rules.d
-
 
 RUN pip3 install --no-cache-dir --verbose adafruit-blinka
 RUN rm -rf /jetson-gpio

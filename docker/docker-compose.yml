@@ -10,6 +10,7 @@ services:
       - /tmp/argus_socket:/tmp/argus_socket
       - /etc/nv_tegra_release:/etc/nv_tegra_release
       - /tmp/nv_jetson_model:/tmp/nv_jetson_model 
+      - /usr/src/jetson_multimedia_api:/usr/src/jetson_multimedia_api
     devices:
       - /dev/video0
       - /dev/i2c-7

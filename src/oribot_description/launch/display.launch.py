@@ -77,6 +77,13 @@ def generate_launch_description():
         output='screen'
     )
 
+    camera_node = Node(
+        package='oribot_camera',
+        executable='camera_node',
+        name='camera_node',
+        output='screen'
+    )
+
     imu_node = Node(
         package='oribot_imu',
         executable='imu_node',
@@ -128,6 +135,7 @@ def generate_launch_description():
             'angle_compensate',
             default_value=angle_compensate,
             description='Specifying whether or not to enable angle_compensate of scan data'),
+
         DeclareLaunchArgument(
             'scan_mode',
             default_value=scan_mode,
@@ -151,16 +159,7 @@ def generate_launch_description():
         driver_node,
         imu_node,
         oribot_node,
-        Node(
-            package="ros_deep_learning",
-            executable="video_source",
-            name="video_source",
-            parameters=[{
-                'resource': video_resource,
-                'flip': video_flip
-            }],
-            output="screen"
-        ),
+        camera_node,
         Node(
             package='sllidar_ros2',
             executable='sllidar_node',

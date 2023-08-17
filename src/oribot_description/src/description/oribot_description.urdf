@@ -111,8 +111,6 @@
   <xacro:wheel prefix="drivewhl_fl" x_reflect="1" y_reflect="1" />
   <xacro:wheel prefix="drivewhl_fr" x_reflect="1" y_reflect="-1" />
 
-  
-
 <link name="laser">
   <inertial>
     <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -154,6 +152,21 @@
   <parent link="base_link"/>
   <child link="imu_link"/>
   <origin xyz="${imu_xoff} 0 ${imu_zoff}" rpy="0 0 0"/>
+</joint>
+
+<link name="camera">
+  <visual>
+    <origin xyz="0 0 0" rpy="0 ${pi/2} 0"/>
+    <geometry>
+       <box size="0.02 0.02 0.02"/>
+    </geometry>
+  </visual>
+</link>
+
+<joint name="camera_joint" type="fixed">
+  <parent link="base_link"/>
+  <child link="camera"/>
+  <origin xyz="${base_length/2.0 + 0.01} 0 ${base_height/2.0 - 0.01}" rpy="0 0 0"/>
 </joint>
 
 </robot>

@@ -41,10 +41,10 @@ class DriverNode(Node):
         #msg.pose.pose.orientation.z = 0.0
 
         msg.twist.twist.angular.z = 0.0
-        msg.twist.twist.linear.x = 0.2
+        msg.twist.twist.linear.x = 0.0
         msg.twist.twist.linear.y = 0.0     
         
-        self.x = self.x + 1/1000.0
+        # self.x = self.x + 1/1000.0
     
         self.odometry_publisher.publish(msg)
 
