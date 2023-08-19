@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 die () {
     echo >&2 "$@"
     exit 1
@@ -14,5 +15,5 @@ LATEST="$BASE_TAG:latest"
 echo $TAG
 echo $LATEST
 
-sudo docker build --no-cache --network=host -t $TAG --build-arg CACHEBUST=$(date +%s) -f Dockerfile.oribot .
+sudo docker build --network=host -t $TAG --build-arg CACHEBUST=$(date +%s) -f Dockerfile.oribot .
 sudo docker tag $TAG $LATEST

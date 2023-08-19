@@ -60,6 +60,11 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        camera:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         drivewhl_fl_link:
           Alpha: 1
           Show Axes: false
@@ -107,6 +112,8 @@ Visualization Manager:
           Value: true
         base_link:
           Value: true
+        camera:
+          Value: true
         drivewhl_fl_link:
           Value: true
         drivewhl_fr_link:
@@ -130,23 +137,24 @@ Visualization Manager:
       Show Names: false
       Tree:
         map:
-          {}
-        odom:
-          base_link:
-            base_footprint:
-              {}
-            drivewhl_fl_link:
-              {}
-            drivewhl_fr_link:
-              {}
-            drivewhl_rl_link:
-              {}
-            drivewhl_rr_link:
-              {}
-            imu_link:
-              {}
-            laser:
-              {}
+          odom:
+            base_link:
+              base_footprint:
+                {}
+              camera:
+                {}
+              drivewhl_fl_link:
+                {}
+              drivewhl_fr_link:
+                {}
+              drivewhl_rl_link:
+                {}
+              drivewhl_rr_link:
+                {}
+              imu_link:
+                {}
+              laser:
+                {}
       Update Interval: 0
       Value: true
     - Alpha: 0.5
@@ -278,7 +286,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
-    Fixed Frame: map
+    Fixed Frame: camera
     Frame Rate: 30
   Name: root
   Tools:

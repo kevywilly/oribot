@@ -23,7 +23,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'driver_node = oribot_driver.driver_node:main'
+            'driver_node = oribot_driver.driver_node:main',
+            'odometry_node = oribot_driver.odometry_node:main'
         ],
     },
 )

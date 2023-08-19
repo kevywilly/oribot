@@ -29,7 +29,7 @@ class CameraNode(Node):
         self.bridge = CvBridge()
         self.video_publisher = self.create_publisher(Image,"video_source/raw", 10)
         
-        self.create_timer(.033, self.publish_video)
+        self.create_timer(.01, self.publish_video)
         self.x = 0.0
 
     def log(self, txt: str):

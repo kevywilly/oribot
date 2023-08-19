@@ -73,7 +73,14 @@ def generate_launch_description():
     driver_node = Node(
         package='oribot_driver',
         executable='driver_node',
-        name='inu_node',
+        name='drive_node',
+        output='screen'
+    )
+
+    odometry_node = Node(
+        package='oribot_driver',
+        executable='odometry_node',
+        name='odometry_node',
         output='screen'
     )
 
@@ -87,7 +94,7 @@ def generate_launch_description():
     imu_node = Node(
         package='oribot_imu',
         executable='imu_node',
-        name='inu_node',
+        name='imu_node',
         output='screen'
     )
 
@@ -157,7 +164,7 @@ def generate_launch_description():
         robot_state_publisher_node,
         robot_localization_node,
         driver_node,
-        imu_node,
+        odometry_node,
         oribot_node,
         camera_node,
         Node(
