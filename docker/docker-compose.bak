@@ -1,0 +1,30 @@
+version: '3.4'
+services:
+  oribot:
+    image: kevywilly/oribot
+    command: tail -f /dev/null
+    volumes:
+      - /home/orin/oribot:/oribot
+      - /etc/enctune.conf:/etc/enctune.conf
+      - /tmp/argus_socket:/tmp/argus_socket
+      - /etc/nv_tegra_release:/etc/nv_tegra_release
+      - /tmp/nv_jetson_model:/tmp/nv_jetson_model 
+    devices:
+      - /dev/video0
+      - /dev/i2c-7
+      - /dev/ttyUSB0
+    environment:
+      - DISPLAY=novnc:0.0
+    networks:
+      - x11
+  novnc:
+    image: kevywilly/oribot-novnc:latest
+    env_file:
+      - novnc.env
+    ports:
+      - "8080:8080"
+    networks:
+      - x11
+networks:
+  x11:
+
