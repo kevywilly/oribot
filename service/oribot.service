@@ -1,0 +1,32 @@
+[Unit]
+Description=Juno.
+After=docker.service
+Requires=docker.service
+ 
+[Service]
+Type=simple
+User=root
+ExecStartPre=-/usr/bin/docker exec oribot.service stop
+ExecStartPre=-/usr/bin/docker rm oribot.service
+ExecStartPre=-/bin/systemctl restart nvargus-daemon
+ExecStart=/usr/bin/docker run --runtime nvidia --rm  \
+    --network host   \
+    -v /tmp/argus_socket:/tmp/argus_socket     \
+    -v /etc/enctune.conf:/etc/enctune.conf     \
+    -v /etc/nv_tegra_release:/etc/nv_tegra_release     \
+    -v /tmp/nv_jetson_model:/tmp/nv_jetson_model      \
+    --device /dev/video0   \
+    --device /dev/i2c-0  --device /dev/i2c-1  --device /dev/i2c-2  --device /dev/i2c-3  --device /dev/i2c-4  --device /dev/i2c-5  --device /dev/i2c-6  --device /dev/i2c-7  --device /dev/i2c-8  --device /dev/i2c-9   --device /dev/ttyUSB0       \
+    --volume /home/orin/oribot/service/data:/jetson-inference/data \
+    --volume /home/orin/oribot/service/python/training/classification/data:/jetson-inference/python/training/classification/data \
+    --volume /home/orin/oribot/service/python/training/classification/models:/jetson-inference/python/training/classification/models \
+    --volume /home/orin/oribot/service/python/training/detection/ssd/data:/jetson-inference/python/training/detection/ssd/data \
+    --volume /home/orin/oribot/service/python/training/detection/ssd/models:/jetson-inference/python/training/detection/ssd/models \
+    --volume /home/orin/oribot/service/python/www/recognizer/data:/jetson-inference/python/www/recognizer/data \
+    --volume /home/orin/oribot:/oribot \
+    --name oribot.service  \
+    kevywilly/oribot:latest  /oribot_entrypoint.sh 
+ExecStop=/usr/bin/docker stop oribot.service
+ 
+[Install]
+WantedBy=multi-user.target

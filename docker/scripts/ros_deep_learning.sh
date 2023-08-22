@@ -4,7 +4,11 @@
 set -e
 #set -x
 
+<<<<<<< HEAD
 ROS_DISTRO='iron'
+=======
+ROS_DISTRO='humble'
+>>>>>>> v3.0
 WORKSPACE="/ros_deep_learning"
 
 echo "ROS_DISTRO = $ROS_DISTRO"

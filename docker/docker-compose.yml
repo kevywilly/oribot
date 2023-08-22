@@ -1,0 +1,38 @@
+version: '3.4'
+services:
+  nginx:
+    image: kevywilly/nginx:latest
+    ports:
+      - 80:80
+  oribot:
+    image: kevywilly/oribot:latest
+    command: tail -f /dev/null
+    privileged: true
+    volumes:
+      - /home/orin/oribot:/oribot
+      - /etc/enctune.conf:/etc/enctune.conf
+      - /tmp/argus_socket:/tmp/argus_socket
+      - /etc/nv_tegra_release:/etc/nv_tegra_release
+      - /tmp/nv_jetson_model:/tmp/nv_jetson_model 
+      #- /usr/src/jetson_multimedia_api:/usr/src/jetson_multimedia_api
+    devices:
+      - /dev/video0
+      - /dev/i2c-7
+      - /dev/ttyUSB0
+    environment:
+      - DISPLAY=novnc:0.0
+    ports:
+      - "5000:5000"
+    networks:
+      - x11
+  novnc:
+    image: kevywilly/novnc:latest
+    env_file:
+      - novnc.env
+    ports:
+      - "8080:8080"
+    networks:
+      - x11
+networks:
+  x11:
+
