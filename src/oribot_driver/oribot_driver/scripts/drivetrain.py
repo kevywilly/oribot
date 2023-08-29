@@ -4,6 +4,7 @@ import math
 from adafruit_motorkit import MotorKit
 from oribot.scripts.settings import settings
 from geometry_msgs.msg import Twist
+from enum import Enum
 
 # https://kyrofa.com/posts/your-first-robot-the-driver-4-5/
 # rosrun teleop_twist_joy teleop_node _scale_angular:=4
@@ -21,6 +22,10 @@ RADIANS = 0.0174533
 #_max_degrees_per_second = 360*_max_speed / _turning_circumference
 #_max_radians_per_second = RADIANS * _max_degrees_per_second
 
+class DriveAction(Enum):
+    DRIVE = 1
+    SLIDE = 2
+    
 def _clip(value, minimum, maximum):
    """Ensure value is between minimum and maximum."""
 
@@ -36,8 +41,8 @@ class Drivetrain:
 
         self.logger = logger
         self._wheel_base = settings.wheel_base_meters
-        self._max_linear_velocity = settings.motor_max_rpm*(settings.wheel_radius_meters*2*math.pi)/60 # meters per second
-        self._max_angular_velocity = RADIANS * (360 * self._max_linear_velocity)/(settings.wheel_base_meters*math.pi)
+        self._max_linear_velocity = 0.25 #settings.motor_max_rpm*(settings.wheel_radius_meters*2*math.pi)/60 # meters per second
+        self._max_angular_velocity = 0.035 #RADIANS * (360 * self._max_linear_velocity)/(settings.wheel_base_meters*math.pi)
 
         self._linear_factor = self._max_linear_velocity/linear_max_input
         self._angular_factor = self._max_angular_velocity/angular_max_input
@@ -70,31 +75,27 @@ class Drivetrain:
             self.logger.info(f"GOT linear: {self.x},{self.y} angular: {self.z}")
         
         if abs(self.y) > abs(self.x):
+            action = DriveAction.SLIDE
             linear = self.y
-            sideways = True
-        else:
-            linear = self.x
-            sideways = False
-        
-        if sideways:
             lv = linear*self._linear_factor
             rv = linear*self._linear_factor
         else:
-            lv = linear*self._linear_factor-self.z*self._angular_factor*self._wheel_base/2
-            rv = linear*self._linear_factor+self.z*self._angular_factor*self._wheel_base/2
+            action = DriveAction.DRIVE
+            linear = self.x
+            lv = linear*self._linear_factor+self.z*self._angular_factor*self._wheel_base/2
+            rv = linear*self._linear_factor-self.z*self._angular_factor*self._wheel_base/2
 
         left_speed_pct = lv/self._max_linear_velocity
         right_speed_pct = rv/self._max_linear_velocity
 
         for i in range(4):
-            if sideways:
+            if action == DriveAction.SLIDE:
                 s = left_speed_pct if i % 2 else right_speed_pct
                 v = s if i == 0 or i == 3 else -s
             else:
                 v = left_speed_pct if i % 2 else right_speed_pct
             
             self._set_speed(motor_id=i, speed_pct=v)
-
 
     def stop(self):
         self.drive_twist(Twist())

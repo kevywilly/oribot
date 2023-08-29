@@ -9,9 +9,11 @@ class DriverNode(Node):
     def __init__(self):
         super().__init__("driver_node")
         self.drivetrain: Drivetrain = Drivetrain(self.get_logger(), 1, 1)
-        self.create_subscription(Twist, "/oribot/cmd_vel", self.handle_cmd_vel, 10)
+        self.create_subscription(Twist, "/cmd_vel", self.handle_cmd_vel, 10)
         
         self.x = 0.0
+
+        self.drivetrain.info()
 
     def log(self, txt: str):
         self.get_logger().info(txt)

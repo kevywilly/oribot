@@ -44,7 +44,7 @@ class AppSettings(BaseSettings):
     motor_2_alpha: float = 1.0
     motor_3_alpha: float = 1.0
     motor_4_alpha: float = 1.0
-    motor_max_rpm: float = 200
+    motor_max_rpm: float = 100
 
     wheel_radius_meters: float = 65/2.0/1000
     wheel_base_meters: float = 175/1000.0

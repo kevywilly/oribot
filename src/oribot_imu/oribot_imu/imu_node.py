@@ -47,7 +47,7 @@ class ImuNode(Node):
 
     def __init__(self):
         super().__init__("imu_node")
-        self.imu_publisher = self.create_publisher(Imu,"/oribot/imu", 10)
+        self.imu_publisher = self.create_publisher(Imu,"/imu", 10)
         self.sensor: BNO055 = adafruit_bno055.BNO055_I2C(board.I2C())
         self.create_timer(0.033, self.publish_imu)
 

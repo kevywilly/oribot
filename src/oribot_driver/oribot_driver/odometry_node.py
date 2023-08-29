@@ -6,8 +6,6 @@ from rclpy.node import Node
 from nav_msgs.msg import Odometry
 from tf2_msgs.msg import TFMessage
 from geometry_msgs.msg import TransformStamped
-import adafruit_bno055
-from adafruit_bno055 import BNO055
 import board
 import math
 import numpy as np
@@ -141,7 +139,6 @@ def calc_pose(pose_x, pose_y, orientation_z, wheel_velocities, elapsed_time):
 class TicksCounter:
 
     def __init__(self, enca, encb, radius: float, orientation: int = 1):
-        #self.imu: Imu = Imu()
         self.enca = enca
         self.encb = encb
         self.last_enca_state = 0
@@ -190,10 +187,9 @@ class OdometryNode(Node):
 
     def __init__(self):
         super().__init__("odometry_node")
-        self.imu: BNO055 = adafruit_bno055.BNO055_I2C(board.I2C())
-        self.odometry_publisher = self.create_publisher(Odometry,"oribot/odom", 10)
+        self.odometry_publisher = self.create_publisher(Odometry,"/odom", 10)
         self.transform_publisher = self.create_publisher(TFMessage, "/tf", 10)
-        self.create_timer(0.33, self.loop)
+        self.create_timer(1, self.loop)
         #self.create_timer(1, self.loop)
 
         # 18-green, 16-blue 
@@ -210,8 +206,6 @@ class OdometryNode(Node):
         self.pose_x = 0.0
         self.pose_y = 0.0
         self.orientation_z = 0.0
-        
-        self.orientation_z_imu = self.imu.euler[2]
 
         self.linear_x = 0.0
         self.linear_y = 0.0
@@ -230,7 +224,7 @@ class OdometryNode(Node):
             [w.average_velocity for w in self.tickers], 
             elapsed_time)
         
-        self.get_logger().info(f"pose: {self.pose_x}, {self.pose_y}, {self.orientation_z}")
+        #self.get_logger().info(f"pose: {self.pose_x}, {self.pose_y}, {self.orientation_z}")
 
         stamp = self.get_clock().now().to_msg()
 
@@ -238,8 +232,8 @@ class OdometryNode(Node):
         tf = TransformStamped()
 
         odom: Odometry = Odometry()
-        odom.header.frame_id = "base_link"
-        odom.child_frame_id = "odom"
+        odom.header.frame_id = "odom"
+        odom.child_frame_id = "base_link"
         odom.header.stamp = stamp
         
         odom.twist.twist.linear.x = self.linear_x
@@ -269,25 +263,19 @@ class OdometryNode(Node):
 
     def loop(self):
     
-        
-        for ticker in self.tickers:
-            ticker.start_ticks = ticker.ticks
-
-        time.sleep(UPDATE_INTERVAL)
-    
         end_time = time.time()
         elapsed_time = end_time - self.start_time
 
-        for ticker in self.tickers:
+        for index, ticker in enumerate(self.tickers):
             tick_difference = ticker.ticks - ticker.start_ticks
             ticker.set_rpm((tick_difference / TICKS_PER_REVOLUTION) / (elapsed_time / 60.0))
-
-        self.start_time = time.time()
+            ticker.start_ticks = ticker.ticks
+            self.start_time = time.time()
+            self.get_logger().info(f"RPM-{index}: {ticker.average_rpm:.2f}, vel: {ticker.average_velocity:.3f}, ticks: {tick_difference} time: {elapsed_time}")
 
         self.publish_odometry(elapsed_time)
 
-        #for index, ticker in enumerate(self.tickers):
-        #    self.get_logger().info(f"RPM-{index+2} {ticker.enca}: {ticker.average_rpm:.2f}, vel: {ticker.average_velocity:.3f}")
+            
         
     def cleanup(self):
         for ticker in self.tickers:

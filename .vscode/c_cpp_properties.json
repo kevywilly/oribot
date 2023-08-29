@@ -1,0 +1,24 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/oribot/install/turtlebot3_gazebo/include/**",
+        "/oribot/install/turtlebot3_fake_node/include/**",
+        "/oribot/install/oribot_interfaces/include/**",
+        "/opt/ros/humble/install/include/**",
+        "/oribot/src/oribot_description/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-arm64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

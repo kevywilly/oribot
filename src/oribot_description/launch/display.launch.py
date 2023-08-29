@@ -25,11 +25,35 @@ def generate_launch_description():
     print(default_model_path)
     print(default_rviz_config_path)
 
-    slam = IncludeLaunchDescription(
+    slam2 = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
         os.path.join(get_package_share_directory("slam_toolbox"),"launch","online_async_launch.py")
         )
     )
+
+    nav2 = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory("oribot_bringup"),"launch", "navigation_launch.py")
+        ),
+        launch_arguments={
+                'use_sim_time': 'false'
+            }.items()
+    )
+
+    nav2_slam = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory("oribot_bringup"),"launch", "slam_launch.py")
+        )
+    )
+
+    nav2_rviz = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory("oribot_bringup"),"launch", "rviz_launch.py")
+        )
+    )
+
+
+    
     # online_async_launch.py 
     robot_state_publisher_node = Node(
         package='robot_state_publisher',
@@ -77,7 +101,7 @@ def generate_launch_description():
     )
 
     odometry_node = Node(
-        package='oribot_driver',
+        package='oribot_odometry',
         executable='odometry_node',
         name='odometry_node',
         output='screen'
@@ -180,8 +204,10 @@ def generate_launch_description():
                             }],
             output='screen',
         ),
-        slam,
-        rviz_node
+        imu_node,
+        nav2,
+        slam2,
+        nav2_rviz
     ])
 
     #ld.add_action(slam)

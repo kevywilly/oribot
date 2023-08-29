@@ -36,7 +36,7 @@ class AutodriveNode(Node):
         
 
         # publishers
-        self.drivetrain_publisher = self.create_publisher(Twist, '/oribot/cmd_vel', 10)
+        self.drivetrain_publisher = self.create_publisher(Twist, '/cmd_vel', 10)
         self.log("Created Drivetrain Publisher")
 
         # subscriptions
